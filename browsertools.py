@@ -2,8 +2,7 @@ from selenium import webdriver
 from selenium.webdriver.support.ui import Select
 from selenium.webdriver.common.keys import Keys
 from PIL import Image
-from python_anticaptcha import AnticaptchaClient, NoCaptchaTaskProxylessTask, ImageToTextTask
-import random, time, email, imaplib, string, os
+import random, time, string, os
 
 def wait(min=1, max=3):
     if min > max:
@@ -99,47 +98,6 @@ class Browser:
         except:
             sitekey = self.driver.find_element_by_class_name("NoCaptcha").get_attribute('data-sitekey')
         return sitekey
-    
-    def solveTextCaptcha(self, captcha, min_length=None, max_length=None, digits=True, letters=True, characters=True, lower=True, upper=True, language="en", retries=3):
-        captchafile = generateData(16) + ".png"
-        self.savePic(captcha, captchafile)
-        captcha_fp = open(captchafile, 'rb')
-        client = AnticaptchaClient(self.captchaAPI['text'])
-        task = ImageToTextTask(captcha_fp, min_length=min_length, max_length=max_length)
-        job = client.createTask(task)
-        job.join()        
-        captchatxt = job.get_captcha_text()
-        t = 0
-        #if length and length != len(captchatxt):
-         #   t = 1
-        if t != 1:
-            for everyChar in captchatxt:
-                if digits == False and everyChar in string.digits:
-                    t = 1
-                    break
-                if language == "en":
-                    if letters == False and everyChar in string.ascii_letters:
-                        t = 1
-                        break
-                    if lower == False and everyChar in string.ascii_lowercase:
-                        t = 1
-                        break
-                    if upper == False and everyChar in string.ascii_uppercase:
-                        t = 1
-                        break
-                
-        if t == 1:
-            return self.solveTextCaptcha(captcha, min_length, max_length, digits, letters, characters, lower, upper, language, retries)
-        return captchatxt
-    
-    def solveReCaptcha(self, api):
-        sitekey = self.getSiteKey()
-        client = AnticaptchaClient(api)
-        task = NoCaptchaTaskProxylessTask(self.driver.current_url, sitekey)
-        job = client.createTask(task)
-        job.join()
-        code = job.get_solution_response()        
-        self.inject("g-recaptcha-response", code, "id")
         
     def setUseragent(self, value):
         self.setPref('general.useragent.override', value)
@@ -215,32 +173,6 @@ class Browser:
         if elemtype == 'id':
             getelemstring.format('Id')
         self.driver.execute_script('document.' + getelemstring + '(' + target + ').value = "' + value + '"')
-        
-def readEmail(server, username, password):
-    mail = imaplib.IMAP4_SSL(MAIL_SERVER)
-    mail.login(EMAIL_ACCOUNT, PASSWORD)
-    mail.list()
-    mail.select('inbox')
-    result, data = mail.uid('search', None, "UNSEEN")  # (ALL/UNSEEN)
-    i = len(data[0].split())
-    x = i - 1
-    latest_email_uid = data[0].split()[x]
-    result, email_data = mail.uid('fetch', latest_email_uid, '(RFC822)')
-    raw_email = email_data[0][1]
-    raw_email_string = raw_email.decode('utf-8')
-    email_message = email.message_from_string(raw_email_string)
-
-    # Header Details
-    date_tuple = email.utils.parsedate_tz(email_message['Date'])
-    if date_tuple:
-        local_date = datetime.datetime.fromtimestamp(email.utils.mktime_tz(date_tuple))
-        local_message_date = "%s" % (str(local_date.strftime("%a, %d %b %Y %H:%M:%S")))
-
-    email_from = str(email.header.make_header(email.header.decode_header(email_message['From'])))
-    email_to = str(email.header.make_header(email.header.decode_header(email_message['To'])))
-    subject = str(email.header.make_header(email.header.decode_header(email_message['Subject'])))
-    # Body details
-    otpCode = ""
 
 if __name__ == "__main__":
     b = Browser()
