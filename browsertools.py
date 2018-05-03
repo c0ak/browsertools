@@ -98,6 +98,9 @@ class Browser:
         except:
             sitekey = self.driver.find_element_by_class_name("NoCaptcha").get_attribute('data-sitekey')
         return sitekey
+    
+    def setRecaptchaResponse(self, response):
+        self.inject("g-recaptcha-response", response, "id")
         
     def setUseragent(self, value):
         self.setPref('general.useragent.override', value)
