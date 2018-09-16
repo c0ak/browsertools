@@ -2,7 +2,9 @@ from selenium import webdriver
 from selenium.webdriver.support.ui import Select
 from selenium.webdriver.common.keys import Keys
 from PIL import Image
-import random, time, string, os
+from fake_useragent import UserAgent
+import random, time, string
+
 
 def wait(min=1, max=3):
     if min > max:
@@ -27,13 +29,18 @@ def generateData(length=10, digits=True, letters=True, characters=False, upper=T
         
 
 class Browser:
-    def __init__(self):
+    def __init__(self, anon=True, proxy=''):
         self.profile = webdriver.FirefoxProfile()
         self.driver = None
         self.prefs = {}
         self.captchaAPI = {"text": "", "recaptcha": ""}
         self.auth = ""
         self.size = ""
+        if proxy:
+            self.setProxy(proxy)
+        if anon == True:
+            self.createIdentity()
+            self.startDriver()
         
     def startDriver(self, browser='Firefox', profile=None):
         browser = browser.lower()
@@ -44,9 +51,14 @@ class Browser:
         if self.auth:
             self.setProxyAuth(self.auth)
         if self.size:
-            self.driver.set_window_size(size[0], size[1])
-        self.driver.implicitly_wait(10)
+            self.driver.set_window_size(self.size[0], self.size[1])
+        self.driver.implicitly_wait(30)
         return self.driver
+    
+    def createIdentity(self):
+        self.setUseragent()
+        self.setWindowSize()
+        self.setPref('media.peerconnection.enabled', False)
     
     def setPref(self, target, value):
         if self.driver == None and self.profile != None:
@@ -102,7 +114,7 @@ class Browser:
     def setRecaptchaResponse(self, response):
         self.inject("g-recaptcha-response", response, "id")
         
-    def setUseragent(self, value):
+    def setUseragent(self, value=UserAgent().random):
         self.setPref('general.useragent.override', value)
         self.useragent = value
 
@@ -112,8 +124,8 @@ class Browser:
             wait(min, max)
             
     def setWindowSize(self, sizes=["1920x1080", "1366x768", "1280x1024", "1280x800", "1024x768"], handle='current'):
-        t = random.choice(sizes).split('x')
         if self.driver == None:
+            t = random.choice(sizes).split('x')
             self.size = t
         else:
             self.driver.set_window_size(t[0], t[1], handle)
@@ -179,4 +191,3 @@ class Browser:
 
 if __name__ == "__main__":
     b = Browser()
-    b.startDriver()
